@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiple Choice Exam</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .question {
+            margin-bottom: 20px;
+        }
+        .options label {
+            display: block;
+            margin: 5px 0;
+        }
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        #timer {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Multiple Choice Exam</h1>
+    <form id="examForm">
+        <label for="candidateName">Candidate Name:</label>
+        <input type="text" id="candidateName" placeholder="Enter your name" required><br><br>
+
+        <!-- Question 1 -->
+        <div class="question">
+            <p>1. What is the capital of France?</p>
+            <div class="options">
+                <label><input type="radio" name="q1" value="A"> A. Berlin</label>
+                <label><input type="radio" name="q1" value="B"> B. Madrid</label>
+                <label><input type="radio" name="q1" value="C"> C. Paris</label>
+                <label><input type="radio" name="q1" value="D"> D. Rome</label>
+            </div>
+        </div>
+
+        <!-- Question 2 -->
+        <div class="question">
+            <p>2. Which planet is known as the Red Planet?</p>
+            <div class="options">
+                <label><input type="radio" name="q2" value="A"> A. Earth</label>
+                <label><input type="radio" name="q2" value="B"> B. Mars</label>
+                <label><input type="radio" name="q2" value="C"> C. Jupiter</label>
+                <label><input type="radio" name="q2" value="D"> D. Venus</label>
+            </div>
+        </div>
+
+        <!-- Timer -->
+        <div id="timer">
+            Time Left: <span id="time">10:00</span>
+        </div>
+
+        <!-- Buttons -->
+        <button type="button" onclick="reviewAnswers()">Review Answers</button>
+        <button type="button" onclick="submitExam()">Submit</button>
+    </form>
+
+    <div class="result" id="result"></div>
+
+    <script>
+        // Correct answers
+        const correctAnswers = {
+            q1: 'C',
+            q2: 'B'
+        };
+
+        // Timer Logic
+        function startTimer(duration) {
+            let timer = duration;
+            const timerElement = document.getElementById("time");
+
+            const interval = setInterval(() => {
+                const minutes = Math.floor(timer / 60);
+                const seconds = timer % 60;
+
+                timerElement.textContent = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                timer--;
+
+                if (timer < 0) {
+                    clearInterval(interval);
+                    alert("Time is up! Submitting your exam.");
+                    submitExam();
+                }
+            }, 1000);
+        }
+
+        // Start the timer (e.g., 10 minutes = 600 seconds)
+        startTimer(600);
+
+        // Send WhatsApp Message
+        function sendWhatsAppMessage(name, score, totalQuestions) {
+            const phoneNumber = "1234567890"; // Replace with your WhatsApp number
+            const message = `Exam Results:\nCandidate: ${name}\nScore: ${score} out of ${totalQuestions}`;
+            const encodedMessage = encodeURIComponent(message);
+
+            // Construct the WhatsApp URL
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+
+            // Open the WhatsApp link
+            window.open(whatsappUrl, "_blank");
+        }
+
+        // Review Answers
+        function reviewAnswers() {
+            const form = document.getElementById('examForm');
+            let reviewText = "Here are your selected answers:\n";
+
+            for (const question of Object.keys(correctAnswers)) {
+                const selectedOption = form.elements[question]?.value;
+                reviewText += `${question}: ${selectedOption || "No Answer Selected"}\n`;
+            }
+
+            alert(reviewText);
+        }
+
+        // Generate PDF
+        async function generatePDF(name, score, totalQuestions) {
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+
+            pdf.setFontSize(16);
+            pdf.text("Exam Results", 20, 20);
+            pdf.setFontSize(12);
+            pdf.text(`Candidate Name: ${name}`, 20, 40);
+            pdf.text(`Score: ${score} out of ${totalQuestions}`, 20, 50);
+
+            pdf.save(`${name}_Exam_Results.pdf`);
+        }
+
+        // Submit Exam
+        function submitExam() {
+            const form = document.getElementById('examForm');
+            const name = document.getElementById('candidateName').value.trim();
+            if (!name) {
+                alert("Please enter your name.");
+                return;
+            }
+
+            let score = 0;
+            const totalQuestions = Object.keys(correctAnswers).length;
+
+            for (const [question, correctAnswer] of Object.entries(correctAnswers)) {
+                const selectedOption = form.elements[question]?.value;
+                if (selectedOption === correctAnswer) {
+                    score++;
+                }
+            }
+
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = `You scored ${score} out of ${totalQuestions}!`;
+
+            // Generate PDF
+            generatePDF(name, score, totalQuestions);
+
+            // Send WhatsApp message
+            sendWhatsAppMessage(name, score, totalQuestions);
+        }
+    </script>
+</body>
+</html>
